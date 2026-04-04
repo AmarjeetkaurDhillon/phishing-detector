@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Segoe UI', sans-serif; }
+        .navbar { background-color: #161b22; border-bottom: 1px solid #30363d; }
+        .navbar-brand { color: #58a6ff !important; font-weight: bold; font-size: 1.3rem; }
+        .card { background-color: #161b22; border: 1px solid #30363d; }
+        .card-header { background-color: #1f2937; border-bottom: 1px solid #30363d; }
+        h5 { color: #58a6ff; }
+        .table { color: #c9d1d9; }
+        .table thead { background-color: #1f2937; color: #58a6ff; }
+        .table tbody tr:hover { background-color: #1f2937; }
+        .email-input { background-color: #0d1117; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 12px; width: 100%; font-family: monospace; font-size: 0.85rem; min-height: 200px; }
+        .email-input:focus { outline: none; border-color: #58a6ff; }
+        .analyse-btn { background-color: #238636; color: white; border: none; padding: 10px 30px; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+        .analyse-btn:hover { background-color: #2ea043; }
+        .sample-btn { background-color: #1f6feb; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; margin-right: 10px; }
+        .verdict-high { background-color: #da3633; color: white; padding: 12px 24px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; text-align: center; }
+        .verdict-medium { background-color: #9e6a03; color: white; padding: 12px 24px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; text-align: center; }
+        .verdict-low { background-color: #238636; color: white; padding: 12px 24px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; text-align: center; }
+        .stat-card { background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; text-align: center; }
+        .stat-number { font-size: 1.8rem; font-weight: bold; color: #58a6ff; }
+        .stat-label { color: #8b949e; font-size: 0.82rem; margin-top: 4px; }
+        .check-pass { color: #3fb950; font-weight: bold; }
+        .check-fail { color: #da3633; font-weight: bold; }
+        .check-missing { color: #9e6a03; font-weight: bold; }
+        .issue-box { background-color: #da363320; border-left: 3px solid #da3633; padding: 8px 12px; font-size: 0.85rem; color: #ff7b72; margin-bottom: 6px; border-radius: 0 4px 4px 0; }
+        .pattern-box { background-color: #9e6a0320; border-left: 3px solid #9e6a03; padding: 8px 12px; font-size: 0.85rem; color: #e3b341; margin-bottom: 6px; border-radius: 0 4px 4px 0; }
+        .url-malicious { color: #da3633; font-weight: bold; }
+        .url-suspicious { color: #e3b341; font-weight: bold; }
+        .url-clean { color: #3fb950; font-weight: bold; }
+        .footer { background-color: #161b22; border-top: 1px solid #30363d; padding: 15px; text-align: center; color: #8b949e; font-size: 0.85rem; margin-top: 40px; }
+        .alert-box { background-color: #da363320; border: 1px solid #da3633; border-radius: 6px; padding: 12px 16px; color: #ff7b72; margin-bottom: 16px; }
+        .score-bar-wrap { background-color: #0d1117; border-radius: 20px; height: 12px; margin-top: 8px; }
+        .score-bar { height: 12px; border-radius: 20px; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg mb-4">
+    <div class="container">
+        <span class="navbar-brand">🎣 Phishing Detector</span>
+        <span class="text-secondary" style="font-size:0.85rem;">Built by Amarjeet Kaur Dhillon | MSc Cyber Security, University of Southampton</span>
+    </div>
+</nav>
+
+<div class="container">
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Analyse Email for Phishing</h5>
+        </div>
+        <div class="card-body">
+            <p style="color:#8b949e; font-size:0.88rem; margin-bottom:12px;">
+                Paste raw email content below. To get raw email: in Gmail click the three dots → Show original. In Outlook: File → Properties → Internet headers.
+            </p>
+            <form method="POST">
+                <textarea name="email_content" class="email-input mb-3" placeholder="Paste raw email headers and body here...">{{ raw_email }}</textarea>
+                <div class="d-flex align-items-center">
+                    <button type="button" class="sample-btn" onclick="loadSample()">Load Sample Phishing Email</button>
+                    <button type="submit" class="analyse-btn">Analyse Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert-box">Error: {{ error }}</div>
+    {% endif %}
+
+    {% if results and not results.error %}
+
+    <div class="mb-4">
+        {% if results.risk_level == "HIGH" %}
+        <div class="verdict-high">VERDICT: {{ results.verdict }} — Risk Score: {{ results.risk_score }}/100</div>
+        {% elif results.risk_level == "MEDIUM" %}
+        <div class="verdict-medium">VERDICT: {{ results.verdict }} — Risk Score: {{ results.risk_score }}/100</div>
+        {% else %}
+        <div class="verdict-low">VERDICT: {{ results.verdict }} — Risk Score: {{ results.risk_score }}/100</div>
+        {% endif %}
+        <div class="score-bar-wrap mt-2">
+            {% if results.risk_level == "HIGH" %}
+            <div class="score-bar" style="width:{{ results.risk_score }}%; background-color:#da3633;"></div>
+            {% elif results.risk_level == "MEDIUM" %}
+            <div class="score-bar" style="width:{{ results.risk_score }}%; background-color:#9e6a03;"></div>
+            {% else %}
+            <div class="score-bar" style="width:{{ results.risk_score }}%; background-color:#238636;"></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ results.risk_score }}</div>
+                <div class="stat-label">Risk Score /100</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number" style="color:#da3633;">{{ results.spoofing_issues|length }}</div>
+                <div class="stat-label">Spoofing Issues</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number" style="color:#e3b341;">{{ results.suspicious_patterns|length }}</div>
+                <div class="stat-label">Suspicious Patterns</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number" style="color:#58a6ff;">{{ results.url_count }}</div>
+                <div class="stat-label">URLs Found</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Email Details</h5></div>
+        <div class="card-body">
+            <table class="table mb-0">
+                <tr><td style="color:#8b949e; width:120px;">From</td><td>{{ results.from }}</td></tr>
+                <tr><td style="color:#8b949e;">Subject</td><td>{{ results.subject }}</td></tr>
+                <tr><td style="color:#8b949e;">Date</td><td>{{ results.date }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Authentication Checks (SPF / DKIM / DMARC)</h5></div>
+        <div class="card-body">
+            <table class="table mb-0">
+                <thead><tr><th>Check</th><th>Result</th><th>What it means</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>SPF</td>
+                        <td>
+                            {% if results.auth_results.spf == "pass" %}<span class="check-pass">PASS</span>
+                            {% elif results.auth_results.spf == "fail" %}<span class="check-fail">FAIL</span>
+                            {% else %}<span class="check-missing">{{ results.auth_results.spf|upper }}</span>{% endif %}
+                        </td>
+                        <td style="font-size:0.85rem; color:#8b949e;">Sender Policy Framework — verifies the sending server is authorised to send for this domain</td>
+                    </tr>
+                    <tr>
+                        <td>DKIM</td>
+                        <td>
+                            {% if results.auth_results.dkim == "pass" %}<span class="check-pass">PASS</span>
+                            {% elif results.auth_results.dkim == "fail" %}<span class="check-fail">FAIL</span>
+                            {% else %}<span class="check-missing">{{ results.auth_results.dkim|upper }}</span>{% endif %}
+                        </td>
+                        <td style="font-size:0.85rem; color:#8b949e;">DomainKeys Identified Mail — verifies the email has not been tampered with in transit</td>
+                    </tr>
+                    <tr>
+                        <td>DMARC</td>
+                        <td>
+                            {% if results.auth_results.dmarc == "pass" %}<span class="check-pass">PASS</span>
+                            {% elif results.auth_results.dmarc == "fail" %}<span class="check-fail">FAIL</span>
+                            {% else %}<span class="check-missing">{{ results.auth_results.dmarc|upper }}</span>{% endif %}
+                        </td>
+                        <td style="font-size:0.85rem; color:#8b949e;">Domain-based Message Authentication — policy defining what to do when SPF/DKIM fail</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if results.spoofing_issues %}
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Spoofing Issues Detected</h5></div>
+        <div class="card-body">
+            {% for issue in results.spoofing_issues %}
+            <div class="issue-box">{{ issue }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if results.suspicious_patterns %}
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Suspicious Patterns Detected</h5></div>
+        <div class="card-body">
+            {% for pattern in results.suspicious_patterns %}
+            <div class="pattern-box">{{ pattern }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if url_results %}
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">URL Analysis — VirusTotal</h5></div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>URL</th><th>Verdict</th><th>Engines</th><th>Source</th></tr></thead>
+                <tbody>
+                    {% for url in url_results %}
+                    <tr>
+                        <td style="font-family:monospace; font-size:0.82rem;">{{ url.url[:60] }}{% if url.url|length > 60 %}...{% endif %}</td>
+                        <td>
+                            {% if url.verdict == "MALICIOUS" %}<span class="url-malicious">MALICIOUS</span>
+                            {% elif url.verdict in ["SUSPICIOUS", "POTENTIALLY SUSPICIOUS"] %}<span class="url-suspicious">{{ url.verdict }}</span>
+                            {% else %}<span class="url-clean">{{ url.verdict }}</span>{% endif %}
+                        </td>
+                        <td style="font-size:0.85rem;">{{ url.malicious_count }}/{{ url.total_engines }}</td>
+                        <td style="font-size:0.82rem; color:#8b949e;">{{ url.source }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+
+</div>
+
+<div class="footer">
+    Phishing Detector — MSc Cyber Security Project — University of Southampton
+</div>
+
+<script>
+function loadSample() {
+    document.querySelector('textarea[name="email_content"]').value = `{{ sample_email | replace('`', "'") | safe }}`;
+}
+</script>
+
+</body>
+</html>
