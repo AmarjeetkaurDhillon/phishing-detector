@@ -3,6 +3,7 @@ Phishing Email Detector
 An intelligent phishing email analyser that checks emails for spoofing, authentication failures, suspicious patterns, and malicious URLs. Produces a risk score and verdict for each email analysed.
 
 Built as part of MSc Cyber Security — University of Southampton.
+🌐 Live Demo: https://phishing-detector-bxb6.onrender.com
 
 <img src="phishing-home.png" width="100%" alt="Phishing Detector Homepage"/>
 
